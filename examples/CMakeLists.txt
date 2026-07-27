@@ -31,6 +31,7 @@ if(SFML_BUILD_GRAPHICS)
         add_subdirectory(joystick)
         add_subdirectory(shader)
         add_subdirectory(island)
+        add_subdirectory(physics_exr_1_triangle_cutter)
         add_subdirectory(vulkan)
     endif()
 
