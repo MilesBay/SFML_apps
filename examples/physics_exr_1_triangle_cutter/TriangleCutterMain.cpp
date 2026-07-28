@@ -2,8 +2,12 @@
 #include <SFML/Main.hpp>
 #include <array>
 #include <filesystem>
+#include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
+
+#include "Plane2d.h"
 
 namespace
 {
@@ -35,6 +39,16 @@ namespace
         marker.setPosition(position);
         marker.setFillColor(color);
         return marker;
+    }
+
+    // Return a string label for the side of the plane based on the distance
+    std::string sideLabel(float distance)
+    {
+        if (distance > 0.f)
+            return "in front of";
+        if (distance < 0.f)
+            return "behind";
+        return "on";
     }
 } // namespace
 
@@ -83,6 +97,32 @@ int main()
             });
 
         window.clear(sf::Color::Black);
+
+        const bool haveTriangle = trianglePoints.size() == 3;
+        const bool havePlane = planePoints.size() == 2;
+
+        if (haveTriangle && havePlane)
+        {
+            const std::array<sf::Vector2f, 3> vertices{ trianglePoints[0], trianglePoints[1], trianglePoints[2] };
+            const sf::Vector2f direction = (planePoints[1] - planePoints[0]).normalized();
+            const Plane2d plane{ planePoints[0], sf::Vector2f{-direction.y, direction.x} };
+
+            window.draw(makeTriangleShape(vertices[0], vertices[1], vertices[2], sf::Color::White));
+
+            std::string status = instructions + "\n";
+            for (std::size_t i = 0; i < vertices.size(); ++i)
+            {
+                std::string s = "\nPoint " + std::to_string(i) + " is " + sideLabel(plane.signedDistance(vertices[i])) + " the plane";
+                std::cout << s << std::endl;
+                status += s;
+            }
+            osdText.setString(status);
+        }
+        else if (haveTriangle)
+        {
+            window.draw(makeTriangleShape(trianglePoints[0], trianglePoints[1], trianglePoints[2], sf::Color::White));
+            osdText.setString(instructions);
+        }
 
         if (trianglePoints.size() == 3)
         {
