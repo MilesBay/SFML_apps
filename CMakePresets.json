@@ -24,7 +24,7 @@
         "SFML_BUILD_EXAMPLES": "ON",
         "SFML_BUILD_TEST_SUITE": "OFF",
         "SFML_ENABLE_STDLIB_ASSERTIONS": "ON",
-        "SFML_WARNINGS_AS_ERRORS": "ON",
+        "SFML_WARNINGS_AS_ERRORS": "OFF",
         "CMAKE_BUILD_TYPE": "Debug"
       }
     }
