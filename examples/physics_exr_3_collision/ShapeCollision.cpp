@@ -1,21 +1,28 @@
-// ShapeCollision.cpp
 #include "Physics.h"
 #include <iostream>
+#include <vector>
 
 int main() {
-    std::cout << "--- Commit 1 Smoke Test: CircleBody & Euler Integration ---\n";
+    std::cout << "--- Commit 2 Smoke Test: Capsule & Convex Body Resolution ---\n";
 
-    CircleBody circle(sf::Vector2f(100.f, 100.f), 20.f, 2.0f, 0.7f, sf::Color::Green);
-    const sf::Vector2f gravity(0.f, 9.8f);
+    // 1. Capsule overlap test
+    Capsule capA(sf::Vector2f(100.f, 100.f), 60.f, 15.f, 0.f, 1.f, 0.5f, sf::Color::Red);
+    Capsule capB(sf::Vector2f(110.f, 100.f), 60.f, 15.f, 0.f, 1.f, 0.5f, sf::Color::Blue);
+    std::cout << "Initial CapA X: " << capA.position.x << " | CapB X: " << capB.position.x << "\n";
+    ResolveCapsuleCollision(capA, capB);
+    std::cout << "Resolved CapA X: " << capA.position.x << " | CapB X: " << capB.position.x << "\n";
 
-    std::cout << "Initial pos: (" << circle.position.x << ", " << circle.position.y << ")\n";
+    // 2. Convex Polygon SAT test
+    std::vector<sf::Vector2f> boxVerts = { {-10.f, -10.f}, {10.f, -10.f}, {10.f, 10.f}, {-10.f, 10.f} };
+    ConvexBody polyA(sf::Vector2f(200.f, 200.f), boxVerts, 0.f, 1.f, 0.5f, sf::Color::Green);
+    ConvexBody polyB(sf::Vector2f(210.f, 200.f), boxVerts, 0.f, 1.f, 0.5f, sf::Color::Yellow);
 
-    // Apply a lateral impulse and simulate 1.0s with gravity
-    circle.ApplyForce(sf::Vector2f(50.f, 0.f));
-    circle.UpdatePhysics(1.0f, gravity);
+    SATResult sat = CheckSAT(polyA.GetWorldVertices(), polyA.position, polyB.GetWorldVertices(), polyB.position);
+    std::cout << "Convex Collision Detected: " << (sat.collided ? "YES" : "NO")
+              << " | Overlap Depth: " << sat.depth << "\n";
 
-    std::cout << "Pos after 1s: (" << circle.position.x << ", " << circle.position.y << ")\n";
-    std::cout << "Velocity: (" << circle.velocity.x << ", " << circle.velocity.y << ")\n";
+    ResolveConvexCollision(polyA, polyB);
+    std::cout << "Resolved PolyA X: " << polyA.position.x << " | PolyB X: " << polyB.position.x << "\n";
 
     return 0;
 }

@@ -4,7 +4,6 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
-// Base Physics Body
 class PhysicsBody {
 public:
     sf::Vector2f position;
@@ -35,6 +34,38 @@ public:
     }
 };
 
+class Capsule : public PhysicsBody {
+public:
+    float length;
+    float radius;
+    float angle;
+    float angularSpeed;
+    sf::Color color;
+
+    Capsule(sf::Vector2f pos, float len, float rad, float rot, float m, float rest, sf::Color col)
+        : PhysicsBody(pos, m, rest), length(len), radius(rad), angle(rot), angularSpeed(0.2f), color(col) {
+    }
+
+    sf::Vector2f GetWorldA() const;
+    sf::Vector2f GetWorldB() const;
+    void UpdateRotation(float dt);
+};
+
+class ConvexBody : public PhysicsBody {
+public:
+    std::vector<sf::Vector2f> localVertices;
+    float angle;
+    float angularSpeed;
+    sf::Color color;
+
+    ConvexBody(sf::Vector2f pos, const std::vector<sf::Vector2f>& verts, float rot, float m, float rest, sf::Color col)
+        : PhysicsBody(pos, m, rest), localVertices(verts), angle(rot), angularSpeed(0.25f), color(col) {
+    }
+
+    std::vector<sf::Vector2f> GetWorldVertices() const;
+    void UpdateRotation(float dt);
+};
+
 class CircleBody : public PhysicsBody {
 public:
     float radius;
@@ -45,6 +76,21 @@ public:
     }
 };
 
-// Geometric Utility Functions
+struct SATResult {
+    bool collided;
+    sf::Vector2f normal;
+    float depth;
+};
+
+// Collision Algorithms
+sf::Vector2f ClosestPointOnSegment(const sf::Vector2f& X, const sf::Vector2f& Y, const sf::Vector2f& P);
+void ResolveCapsuleCollision(Capsule& capA, Capsule& capB);
+SATResult CheckSAT(const std::vector<sf::Vector2f>& vertsA, const sf::Vector2f& centerA,
+    const std::vector<sf::Vector2f>& vertsB, const sf::Vector2f& centerB);
+void ResolveConvexCollision(ConvexBody& bodyA, ConvexBody& bodyB);
 float AngleBetween(const sf::Vector2f& v1, const sf::Vector2f& v2);
 bool IsPointInTriangle(const sf::Vector2f& P, const sf::Vector2f& A, const sf::Vector2f& B, const sf::Vector2f& C);
+
+// Render Helpers
+void DrawCapsule(sf::RenderWindow& window, const Capsule& cap);
+void DrawConvex(sf::RenderWindow& window, const ConvexBody& body);
