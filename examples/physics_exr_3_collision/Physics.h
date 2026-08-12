@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
+// Base Physics Body
 class PhysicsBody {
 public:
     sf::Vector2f position;
@@ -34,6 +35,7 @@ public:
     }
 };
 
+// Derived Shapes
 class Capsule : public PhysicsBody {
 public:
     float length;
@@ -82,7 +84,7 @@ struct SATResult {
     float depth;
 };
 
-// Collision Algorithms
+// Function Declarations
 sf::Vector2f ClosestPointOnSegment(const sf::Vector2f& X, const sf::Vector2f& Y, const sf::Vector2f& P);
 void ResolveCapsuleCollision(Capsule& capA, Capsule& capB);
 SATResult CheckSAT(const std::vector<sf::Vector2f>& vertsA, const sf::Vector2f& centerA,
@@ -91,6 +93,5 @@ void ResolveConvexCollision(ConvexBody& bodyA, ConvexBody& bodyB);
 float AngleBetween(const sf::Vector2f& v1, const sf::Vector2f& v2);
 bool IsPointInTriangle(const sf::Vector2f& P, const sf::Vector2f& A, const sf::Vector2f& B, const sf::Vector2f& C);
 
-// Render Helpers
 void DrawCapsule(sf::RenderWindow& window, const Capsule& cap);
 void DrawConvex(sf::RenderWindow& window, const ConvexBody& body);

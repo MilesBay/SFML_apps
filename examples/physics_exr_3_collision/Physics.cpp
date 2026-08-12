@@ -133,7 +133,7 @@ SATResult CheckSAT(const std::vector<sf::Vector2f>& vertsA, const sf::Vector2f& 
             }
         }
         return true;
-    };
+        };
 
     if (!checkAxes(vertsA) || !checkAxes(vertsB)) {
         SATResult empty;
