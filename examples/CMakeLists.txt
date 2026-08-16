@@ -34,6 +34,7 @@ if(SFML_BUILD_GRAPHICS)
         add_subdirectory(physics_exr_1_triangle_cutter)
         add_subdirectory(physics_exr_2_euler_integration)
         add_subdirectory(physics_exr_3_collision)
+        add_subdirectory(physics_exr_4_spring)
         add_subdirectory(vulkan)
     endif()
 
