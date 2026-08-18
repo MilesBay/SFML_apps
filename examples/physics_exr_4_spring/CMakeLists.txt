@@ -1,7 +1,7 @@
 find_package(Threads REQUIRED)
 
 # all source files
-set(SRC main.cpp Physics.cpp)
+set(SRC RopeSimulation.cpp Physics.cpp)
 
 # define the island target
 sfml_add_example(physics_exr_4 GUI_APP

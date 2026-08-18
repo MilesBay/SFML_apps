@@ -40,5 +40,19 @@ public:
         : PhysicsBody(pos, m, rest) {}
 };
 
+struct Spring {
+    size_t indexA;
+    size_t indexB;
+    float restLength;
+    float stiffness;
+    float damping;
+};
+
+void ApplySpringForce(std::vector<Particle>& particles, const Spring& spring);
 void ResolveEdgeCollision(Particle& particle, float radius, float screenWidth, float screenHeight);
+
+float MassToRadius(float mass, float minMass, float maxMass);
+float MassToThickness(float mass, float minMass, float maxMass);
+
 void DrawParticle(sf::RenderWindow& window, const Particle& particle, float radius, sf::Color color);
+void DrawRopeSegment(sf::RenderWindow& window, const sf::Vector2f& a, const sf::Vector2f& b, float thickness, sf::Color color);
