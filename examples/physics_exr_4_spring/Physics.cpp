@@ -1,7 +1,7 @@
 #include "Physics.h"
 #include <algorithm>
-#include <cmath>
 
+// --- Spring Physics ---
 void ApplySpringForce(std::vector<Particle>& particles, const Spring& spring) {
     Particle& a = particles[spring.indexA];
     Particle& b = particles[spring.indexB];
@@ -13,8 +13,10 @@ void ApplySpringForce(std::vector<Particle>& particles, const Spring& spring) {
     sf::Vector2f dir = delta / dist;
     float displacement = dist - spring.restLength;
 
+    // Hooke's Law: Fs = -k * x, applied along the spring's axis
     float springMag = spring.stiffness * displacement;
 
+    // Damping along the spring axis keeps the chain from oscillating forever
     sf::Vector2f relativeVelocity = b.velocity - a.velocity;
     float dampingMag = spring.damping * Math::Dot(relativeVelocity, dir);
 
@@ -24,11 +26,13 @@ void ApplySpringForce(std::vector<Particle>& particles, const Spring& spring) {
     b.ApplyForce(-force);
 }
 
+// --- Edge Collision ---
 void ResolveEdgeCollision(Particle& particle, float radius, float screenWidth, float screenHeight) {
     if (particle.position.x - radius < 0.f) {
         particle.position.x = radius;
         particle.velocity.x = std::abs(particle.velocity.x) * particle.restitution;
-    } else if (particle.position.x + radius > screenWidth) {
+    }
+    else if (particle.position.x + radius > screenWidth) {
         particle.position.x = screenWidth - radius;
         particle.velocity.x = -std::abs(particle.velocity.x) * particle.restitution;
     }
@@ -36,12 +40,14 @@ void ResolveEdgeCollision(Particle& particle, float radius, float screenWidth, f
     if (particle.position.y - radius < 0.f) {
         particle.position.y = radius;
         particle.velocity.y = std::abs(particle.velocity.y) * particle.restitution;
-    } else if (particle.position.y + radius > screenHeight) {
+    }
+    else if (particle.position.y + radius > screenHeight) {
         particle.position.y = screenHeight - radius;
         particle.velocity.y = -std::abs(particle.velocity.y) * particle.restitution;
     }
 }
 
+// --- Mass to visual scale ---
 float MassToRadius(float mass, float minMass, float maxMass) {
     float t = (mass - minMass) / (maxMass - minMass);
     t = std::max(0.f, std::min(1.f, t));
@@ -54,6 +60,7 @@ float MassToThickness(float mass, float minMass, float maxMass) {
     return 4.f + t * (22.f - 4.f);
 }
 
+// --- Drawing Helpers ---
 void DrawParticle(sf::RenderWindow& window, const Particle& particle, float radius, sf::Color color) {
     sf::CircleShape shape(radius);
     shape.setOrigin({ radius, radius });

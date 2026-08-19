@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
+// Base Physics Body: symplectic Euler integration (v += a*dt, then x += v*dt)
 class PhysicsBody {
 public:
     sf::Vector2f position;
@@ -34,12 +35,15 @@ public:
     }
 };
 
+// A single node of the rope chain
 class Particle : public PhysicsBody {
 public:
     Particle(sf::Vector2f pos, float m, float rest)
-        : PhysicsBody(pos, m, rest) {}
+        : PhysicsBody(pos, m, rest) {
+    }
 };
 
+// A damped spring connecting two particles (by index into the chain)
 struct Spring {
     size_t indexA;
     size_t indexB;
@@ -48,6 +52,7 @@ struct Spring {
     float damping;
 };
 
+// Function Declarations
 void ApplySpringForce(std::vector<Particle>& particles, const Spring& spring);
 void ResolveEdgeCollision(Particle& particle, float radius, float screenWidth, float screenHeight);
 
