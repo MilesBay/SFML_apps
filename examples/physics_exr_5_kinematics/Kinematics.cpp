@@ -1,5 +1,15 @@
 #include "Kinematics.h"
 
+namespace {
+sf::Vector2f SafeDirection(const sf::Vector2f& from, const sf::Vector2f& to, const sf::Vector2f& fallback) {
+    sf::Vector2f delta = to - from;
+    if (Math::LengthSq(delta) < 0.0001f) {
+        return fallback;
+    }
+    return Math::Normalize(delta);
+}
+}
+
 KinematicChain::KinematicChain(const std::vector<float>& segmentLengths, sf::Vector2f origin, sf::Vector2f initialDir)
     : lengths(segmentLengths) {
     joints.resize(lengths.size() + 1);
@@ -19,6 +29,17 @@ void SolveForwardKinematics(KinematicChain& chain, sf::Vector2f rootPos, const s
         cumulativeAngle += localAngles[i];
         sf::Vector2f dir = Math::Rotate(sf::Vector2f(0.f, -1.f), cumulativeAngle);
         chain.joints[i + 1] = chain.joints[i] + dir * chain.lengths[i];
+    }
+}
+
+void SolveHeadFollowIK(KinematicChain& chain, sf::Vector2f headTarget) {
+    std::vector<sf::Vector2f>& joints = chain.joints;
+    const std::vector<float>& lengths = chain.lengths;
+
+    joints[0] = headTarget;
+    for (size_t i = 1; i < joints.size(); ++i) {
+        sf::Vector2f dir = SafeDirection(joints[i - 1], joints[i], sf::Vector2f(0.f, 1.f));
+        joints[i] = joints[i - 1] + dir * lengths[i - 1];
     }
 }
 
