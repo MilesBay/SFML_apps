@@ -32,6 +32,44 @@ void SolveForwardKinematics(KinematicChain& chain, sf::Vector2f rootPos, const s
     }
 }
 
+void SolveFABRIK(KinematicChain& chain, sf::Vector2f basePos, sf::Vector2f target, int iterations) {
+    std::vector<sf::Vector2f>& joints = chain.joints;
+    const std::vector<float>& lengths = chain.lengths;
+    const size_t n = joints.size();
+    if (n < 2) return;
+
+    float totalLength = 0.f;
+    for (float len : lengths) totalLength += len;
+
+    if (Math::Distance(basePos, target) >= totalLength) {
+        sf::Vector2f dir = SafeDirection(basePos, target, sf::Vector2f(0.f, -1.f));
+        joints[0] = basePos;
+        for (size_t i = 0; i < lengths.size(); ++i) {
+            joints[i + 1] = joints[i] + dir * lengths[i];
+        }
+        return;
+    }
+
+    const float tolerance = 0.5f;
+    for (int iter = 0; iter < iterations; ++iter) {
+        if (Math::Distance(joints.back(), target) < tolerance) break;
+
+        // Backward pass
+        joints[n - 1] = target;
+        for (size_t i = n - 2; i < n; --i) {
+            sf::Vector2f dir = SafeDirection(joints[i + 1], joints[i], sf::Vector2f(0.f, -1.f));
+            joints[i] = joints[i + 1] + dir * lengths[i];
+        }
+
+        // Forward pass
+        joints[0] = basePos;
+        for (size_t i = 1; i < n; ++i) {
+            sf::Vector2f dir = SafeDirection(joints[i - 1], joints[i], sf::Vector2f(0.f, 1.f));
+            joints[i] = joints[i - 1] + dir * lengths[i - 1];
+        }
+    }
+}
+
 void SolveHeadFollowIK(KinematicChain& chain, sf::Vector2f headTarget) {
     std::vector<sf::Vector2f>& joints = chain.joints;
     const std::vector<float>& lengths = chain.lengths;

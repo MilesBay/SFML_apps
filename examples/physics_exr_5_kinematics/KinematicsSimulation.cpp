@@ -14,6 +14,11 @@ struct GrassBlade {
     float swayAmplitude = 0.f;
 };
 
+struct Arm {
+    KinematicChain chain;
+    sf::Vector2f base;
+};
+
 struct Worm {
     KinematicChain chain;
 };
@@ -22,16 +27,26 @@ int main() {
     constexpr unsigned int screenWidth = 1280;
     constexpr unsigned int screenHeight = 960;
 
-    sf::RenderWindow window(sf::VideoMode({ screenWidth, screenHeight }), "Test Commit 2 - Head Follow IK Worm");
+    sf::RenderWindow window(sf::VideoMode({ screenWidth, screenHeight }), "Kinematics - Grass, Arm & Worm");
     window.setVerticalSyncEnabled(true);
 
     sf::Clock clock;
     float elapsedTime = 0.f;
 
-    // Grass setup
-    constexpr int grassBladeCount = 80;
+    sf::Font font;
+    bool fontLoaded = font.openFromFile("../resources/tuffy.ttf");
+    std::optional<sf::Text> uiText;
+    if (fontLoaded) {
+        uiText.emplace(font);
+        uiText->setCharacterSize(14);
+        uiText->setFillColor(sf::Color::White);
+    }
+
+    // --- Grass field: Forward Kinematics ---
+    constexpr int grassBladeCount = 100;
     constexpr int grassSegmentCount = 6;
-    std::mt19937 rng(42);
+
+    std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<float> xJitterDist(-8.f, 8.f);
     std::uniform_real_distribution<float> segLenDist(5.f, 20.f);
     std::uniform_real_distribution<float> freqDist(0.6f, 1.4f);
@@ -39,10 +54,16 @@ int main() {
     std::uniform_real_distribution<float> ampDist(0.10f, 0.22f);
 
     std::vector<GrassBlade> grassBlades;
+    grassBlades.reserve(grassBladeCount);
     for (int i = 0; i < grassBladeCount; ++i) {
         float t = static_cast<float>(i) / static_cast<float>(grassBladeCount - 1);
         float x = Math::Lerp(25.f, static_cast<float>(screenWidth) - 25.f, t) + xJitterDist(rng);
-        GrassBlade blade{ KinematicChain(std::vector<float>(grassSegmentCount, segLenDist(rng)), {x, static_cast<float>(screenHeight)}) };
+        float segLen = segLenDist(rng);
+
+        std::vector<float> segmentLengths(grassSegmentCount, segLen);
+        sf::Vector2f origin(x, static_cast<float>(screenHeight));
+
+        GrassBlade blade{ KinematicChain(segmentLengths, origin, sf::Vector2f(0.f, -1.f)) };
         blade.swayFreq = freqDist(rng);
         blade.swayPhase = phaseDist(rng);
         blade.swayAmplitude = ampDist(rng);
@@ -54,7 +75,14 @@ int main() {
         grassBlades.push_back(std::move(blade));
     }
 
-    // --- Worm setup: Follow IK test ---
+    // --- Arm: Inverse Kinematics (FABRIK) ---
+    constexpr int armSegmentCount = 6;
+    constexpr float armSegmentLength = 42.f;
+    std::vector<float> armLengths(armSegmentCount, armSegmentLength);
+    Arm arm{ KinematicChain(armLengths, sf::Vector2f(static_cast<float>(screenWidth) * 0.5f, static_cast<float>(screenHeight) * 0.5f), sf::Vector2f(1.f, 0.f)) };
+    arm.base = arm.chain.joints[0];
+
+    // --- Worm: Inverse Kinematics (Follow) ---
     constexpr int wormSegmentCount = 6;
     constexpr float wormSegmentLength = 42.f;
     std::vector<float> wormLengths(wormSegmentCount, wormSegmentLength);
@@ -82,15 +110,34 @@ int main() {
             SolveForwardKinematics(blade.chain, blade.chain.joints[0], blade.localAngles);
         }
 
-        // Run Head Follow IK test
+        SolveFABRIK(arm.chain, arm.base, mousePos);
         SolveHeadFollowIK(worm.chain, mousePos);
 
         window.clear(sf::Color::Black);
+
         for (const auto& blade : grassBlades) {
             DrawChain(window, blade.chain, 6.f, 1.5f, sf::Color(40, 110, 45), sf::Color(120, 210, 90));
         }
+
         DrawChain(window, worm.chain, 14.f, 4.f, sf::Color::Green, sf::Color::White);
         DrawJoint(window, worm.chain.joints.front(), 10.f, sf::Color::White);
+
+        DrawChain(window, arm.chain, 16.f, 6.f, sf::Color::Black, sf::Color::White);
+        for (const auto& joint : arm.chain.joints) {
+            DrawJoint(window, joint, 6.f, sf::Color::White);
+        }
+        DrawJoint(window, arm.chain.joints.front(), 11.f, sf::Color::White);
+        DrawJoint(window, arm.chain.joints.back(), 7.f, sf::Color::Yellow);
+
+        if (fontLoaded) {
+            uiText->setString(
+                "Kinematics Demo\n"
+                "Grass (Forward Kinematics) sways on its own.\n"
+                "Arm (Inverse Kinematics, anchored centre) and Worm (Inverse Kinematics, free) both reach for the mouse.");
+            uiText->setPosition({ 15.f, 15.f });
+            window.draw(*uiText);
+        }
+
         window.display();
     }
 

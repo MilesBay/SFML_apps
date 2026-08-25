@@ -15,6 +15,9 @@ struct KinematicChain {
 // --- Forward Kinematics ---
 void SolveForwardKinematics(KinematicChain& chain, sf::Vector2f rootPos, const std::vector<float>& localAngles);
 
+// --
+void SolveFABRIK(KinematicChain& chain, sf::Vector2f basePos, sf::Vector2f target, int iterations = 10);
+
 // --- Inverse Kinematics: free-tailed follow chain ---
 void SolveHeadFollowIK(KinematicChain& chain, sf::Vector2f headTarget);
 
