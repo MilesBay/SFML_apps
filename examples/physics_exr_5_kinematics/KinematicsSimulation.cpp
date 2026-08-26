@@ -5,20 +5,23 @@
 #include <optional>
 #include <random>
 
+// One grass blade: a Forward Kinematics chain rooted at the ground.
 struct GrassBlade {
     KinematicChain chain;
-    std::vector<float> segmentWeight;
-    std::vector<float> localAngles;
+    std::vector<float> segmentWeight;  // per-segment share of the sway (root barely bends, tip bends most)
+    std::vector<float> localAngles;    // scratch buffer rebuilt every frame before solving
     float swayFreq = 0.f;
     float swayPhase = 0.f;
     float swayAmplitude = 0.f;
 };
 
+// The arm: an Inverse Kinematics (FABRIK) chain, root pinned to a fixed base.
 struct Arm {
     KinematicChain chain;
     sf::Vector2f base;
 };
 
+// The worm: an Inverse Kinematics chain with a free tail, head pinned to a moving target.
 struct Worm {
     KinematicChain chain;
 };
@@ -43,8 +46,8 @@ int main() {
     }
 
     // --- Grass field: Forward Kinematics ---
-    constexpr int grassBladeCount = 100;
-    constexpr int grassSegmentCount = 6;
+    constexpr int grassBladeCount = 100;  // >=50
+    constexpr int grassSegmentCount = 6;  // >=5
 
     std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<float> xJitterDist(-8.f, 8.f);
@@ -75,14 +78,14 @@ int main() {
         grassBlades.push_back(std::move(blade));
     }
 
-    // --- Arm: Inverse Kinematics (FABRIK) ---
+    // --- Arm: Inverse Kinematics (FABRIK), root pinned to the window centre ---
     constexpr int armSegmentCount = 6;
     constexpr float armSegmentLength = 42.f;
     std::vector<float> armLengths(armSegmentCount, armSegmentLength);
     Arm arm{ KinematicChain(armLengths, sf::Vector2f(static_cast<float>(screenWidth) * 0.5f, static_cast<float>(screenHeight) * 0.5f), sf::Vector2f(1.f, 0.f)) };
     arm.base = arm.chain.joints[0];
 
-    // --- Worm: Inverse Kinematics (Follow) ---
+    // --- Worm: Inverse Kinematics, free tail, head pinned to the mouse ---
     constexpr int wormSegmentCount = 6;
     constexpr float wormSegmentLength = 42.f;
     std::vector<float> wormLengths(wormSegmentCount, wormSegmentLength);
@@ -102,6 +105,8 @@ int main() {
         sf::Vector2i mousePixel = sf::Mouse::getPosition(window);
         sf::Vector2f mousePos(static_cast<float>(mousePixel.x), static_cast<float>(mousePixel.y));
 
+        // Grass sway: rebuild each blade's local bend angles from its own
+        // frequency/phase/amplitude, then run Forward Kinematics.
         for (auto& blade : grassBlades) {
             float wave = std::sin(elapsedTime * blade.swayFreq + blade.swayPhase);
             for (size_t s = 0; s < blade.localAngles.size(); ++s) {
@@ -110,7 +115,10 @@ int main() {
             SolveForwardKinematics(blade.chain, blade.chain.joints[0], blade.localAngles);
         }
 
+        // Arm reaches for the mouse while its root stays anchored at the window centre.
         SolveFABRIK(arm.chain, arm.base, mousePos);
+
+        // Worm's head is pinned directly to the mouse; the free tail trails behind it.
         SolveHeadFollowIK(worm.chain, mousePos);
 
         window.clear(sf::Color::Black);
