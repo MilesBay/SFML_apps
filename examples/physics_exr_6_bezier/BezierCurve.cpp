@@ -1,6 +1,7 @@
 #include "BezierCurve.h"
+#include "MathHelpers.h"
 #include <array>
-#include <vector>
+#include <cmath>
 
 sf::Vector2f CubicBezier::Evaluate(float t) const {
     float u = 1.f - t;
@@ -11,21 +12,33 @@ sf::Vector2f CubicBezier::Evaluate(float t) const {
     return b0 * p0 + b1 * p1 + b2 * p2 + b3 * p3;
 }
 
+void DrawDashedCurve(sf::RenderWindow& window, const CubicBezier& curve, int segmentCount, float thickness, sf::Color color) {
+    if (segmentCount < 2) segmentCount = 2;
+
+    sf::Vector2f prevPoint = curve.Evaluate(0.f);
+    for (int i = 1; i <= segmentCount; ++i) {
+        float t = static_cast<float>(i) / static_cast<float>(segmentCount);
+        sf::Vector2f point = curve.Evaluate(t);
+
+        // Only draw odd-indexed segments so the curve renders as a dash/gap pattern.
+        if (i % 2 == 1) {
+            sf::Vector2f dir = point - prevPoint;
+            float len = Math::Length(dir);
+            if (len > 0.0001f) {
+                sf::RectangleShape dash({ len, thickness });
+                dash.setOrigin({ 0.f, thickness * 0.5f });
+                dash.setPosition(prevPoint);
+                dash.setRotation(sf::radians(std::atan2(dir.y, dir.x)));
+                dash.setFillColor(color);
+                window.draw(dash);
+            }
+        }
+
+        prevPoint = point;
+    }
+}
+
 void DrawHandleLine(sf::RenderWindow& window, sf::Vector2f a, sf::Vector2f b, sf::Color color) {
     std::array<sf::Vertex, 2> line{ sf::Vertex{a, color}, sf::Vertex{b, color} };
     window.draw(line.data(), line.size(), sf::PrimitiveType::Lines);
-}
-
-void DrawSolidCurve(sf::RenderWindow& window, const CubicBezier& curve, int segmentCount, sf::Color color) {
-    if (segmentCount < 1) segmentCount = 1;
-
-    std::vector<sf::Vertex> vertices;
-    vertices.reserve(segmentCount + 1);
-
-    for (int i = 0; i <= segmentCount; ++i) {
-        float t = static_cast<float>(i) / static_cast<float>(segmentCount);
-        vertices.push_back(sf::Vertex{ curve.Evaluate(t), color });
-    }
-
-    window.draw(vertices.data(), vertices.size(), sf::PrimitiveType::LineStrip);
 }
